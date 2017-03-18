@@ -29,6 +29,7 @@ servo_max = 600  # Max pulse length out of 4096
 
 x_current = 300
 y_current = 400
+step = 50
 
 # Helper function to make setting a servo pulse width simpler.
 def set_servo_pulse(channel, pulse):
@@ -40,6 +41,16 @@ def set_servo_pulse(channel, pulse):
     pulse *= 1000
     pulse //= pulse_length
     pwm.set_pwm(channel, 0, pulse)
+
+def servo_move(channel, direction, current, offset, min_limit, max_limit):
+    offset = direction * offset
+    current += offset
+    current = min_limit if current < min_limit else current
+    current = max_limit if current > max_limit else current
+    pwm.set_pwm(channel, 0, current)
+    time.sleep(0.1)
+    return current
+
 
 # Set frequency to 60hz, good for servos.
 pwm.set_pwm_freq(60)
@@ -53,35 +64,14 @@ pwm.set_pwm(0, 0, x_current)
 print('Moving servo on channel 0, press Ctrl-C to quit...')
 
 while True:
-	for event in  pygame.event.get():
-		print event
-		if (event.type == KEYDOWN):
-			if (event.key == K_UP): 
-				y_current -= 50
-				if (y_current <= servo_min):
-					y_current = servo_min
-    				pwm.set_pwm(1, 0, y_current)
-				time.sleep(0.1)
-			if (event.key == K_DOWN): 
-				y_current += 50
-				if (y_current >= servo_max):
-					y_current = servo_max
-    				pwm.set_pwm(1, 0, y_current)
-				time.sleep(0.1)
-			if (event.key == K_LEFT): 
-				x_current -= 50
-				if (x_current <= servo_min):
-					x_current = servo_min
-    				pwm.set_pwm(0, 0, x_current)
-				time.sleep(0.1)
-			if (event.key == K_RIGHT): 
-				x_current += 50
-				if (x_current >= servo_max):
-					x_current = servo_max
-    				pwm.set_pwm(0, 0, x_current)
-				time.sleep(0.1)
-    # Move servo on channel O between extremes.
-    #time.sleep(1)
-    #pwm.set_pwm(1, 0, servo_max)
-    #time.sleep(1)
-  
+    for event in  pygame.event.get():
+        print event
+        if (event.type == KEYDOWN):
+            if (event.key == K_UP):
+                y_current = servo_move(1, -1, y_current, step, servo_min, servo_max)
+            if (event.key == K_DOWN):
+                y_current = servo_move(1, 1, y_current, step, servo_min, servo_max)
+            if (event.key == K_LEFT):
+                x_current = servo_move(0, -1, x_current, step, servo_min, servo_max)
+            if (event.key == K_RIGHT):
+                x_current = servo_move(0, 1, x_current, step, servo_min, servo_max)
