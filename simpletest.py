@@ -8,10 +8,70 @@ import select
 import sys
 import pygame
 from pygame.locals import *
+import RPi.GPIO as GPIO
+
+
 
 # Import the PCA9685 module.
 import Adafruit_PCA9685
 
+
+GPIO.setmode(GPIO.BCM)
+TRIG = 18
+ECHO = 16
+ 
+GPIO.setup(TRIG, GPIO.OUT)
+GPIO.setup(ECHO, GPIO.IN)
+
+def get_distance():
+    GPIO.output(TRIG, 0)
+    time.sleep(0.00001)
+
+    GPIO.output(TRIG, 1)
+    time.sleep(0.00001)
+    GPIO.output(TRIG, 0)
+    start = time.time()
+
+    while GPIO.input(ECHO) == 0:
+        pass
+    start = time.time()
+
+    while GPIO.input(ECHO) == 1:
+        pass
+    stop = time.time()
+    distance = (stop - start) * 34000 / 2 #cm
+    return distance
+
+#TODO
+#GPIO.cleanup()
+
+        
+#
+#try:
+#  while True:
+#    GPIO.output(TRIG, 0)
+#    time.sleep(0.01)
+#    
+#    GPIO.output(TRIG, 1)
+#    time.sleep(0.00001)
+#    GPIO.output(TRIG, 0)
+#    start = time.time()
+#    print("start time :1")
+#
+#    while GPIO.input(ECHO) == 0:
+#        pass
+#    start = time.time()
+#
+#    print("start time :2")
+#
+#    while GPIO.input(ECHO) == 1:
+#        pass
+#    stop = time.time()
+#    print("stop time :")
+#    distance = (stop - start) * 34000 / 2
+#    print distance
+#except KeyboardInterrupt:
+#    GPIO.cleanup()
 
 # Uncomment to enable debug output.
 #import logging
@@ -50,7 +110,7 @@ def servo_move(channel, direction, current, offset, min_limit, max_limit):
     pwm.set_pwm(channel, 0, current)
     time.sleep(0.1)
     return current
-
+ 
 
 # Set frequency to 60hz, good for servos.
 pwm.set_pwm_freq(60)
@@ -63,15 +123,21 @@ pwm.set_pwm(0, 0, x_current)
 
 print('Moving servo on channel 0, press Ctrl-C to quit...')
 
-while True:
-    for event in  pygame.event.get():
-        print event
-        if (event.type == KEYDOWN):
-            if (event.key == K_UP):
-                y_current = servo_move(1, -1, y_current, step, servo_min, servo_max)
-            if (event.key == K_DOWN):
-                y_current = servo_move(1, 1, y_current, step, servo_min, servo_max)
-            if (event.key == K_LEFT):
-                x_current = servo_move(0, -1, x_current, step, servo_min, servo_max)
-            if (event.key == K_RIGHT):
-                x_current = servo_move(0, 1, x_current, step, servo_min, servo_max)
+try:
+    while True:
+        for event in  pygame.event.get():
+            #print event
+            if (event.type == KEYDOWN):
+                if (event.key == K_UP):
+                    y_current = servo_move(1, -1, y_current, step, servo_min, servo_max)
+                if (event.key == K_DOWN):
+                    y_current = servo_move(1, 1, y_current, step, servo_min, servo_max)
+                if (event.key == K_LEFT):
+                    x_current = servo_move(0, -1, x_current, step, servo_min, servo_max)
+                if (event.key == K_RIGHT):
+                    x_current = servo_move(0, 1, x_current, step, servo_min, servo_max)
+
+                dis = get_distance()
+                print dis
+except KeyboardInterrupt:
+    GPIO.cleanup()
