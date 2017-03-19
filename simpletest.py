@@ -42,36 +42,6 @@ def get_distance():
     distance = (stop - start) * 34000 / 2 #cm
     return distance
 
-#TODO
-#GPIO.cleanup()
-
-        
-#
-#try:
-#  while True:
-#    GPIO.output(TRIG, 0)
-#    time.sleep(0.01)
-#    
-#    GPIO.output(TRIG, 1)
-#    time.sleep(0.00001)
-#    GPIO.output(TRIG, 0)
-#    start = time.time()
-#    print("start time :1")
-#
-#    while GPIO.input(ECHO) == 0:
-#        pass
-#    start = time.time()
-#
-#    print("start time :2")
-#
-#    while GPIO.input(ECHO) == 1:
-#        pass
-#    stop = time.time()
-#    print("stop time :")
-#    distance = (stop - start) * 34000 / 2
-#    print distance
-#except KeyboardInterrupt:
-#    GPIO.cleanup()
 
 # Uncomment to enable debug output.
 #import logging
@@ -115,16 +85,24 @@ def servo_move(channel, direction, current, offset, min_limit, max_limit):
 # Set frequency to 60hz, good for servos.
 pwm.set_pwm_freq(60)
 
+#init pygame
 pygame.init()
 screen = pygame.display.set_mode((640,480))
+clock = pygame.time.Clock()
+font = pygame.font.SysFont("comicsansms", 100)
+text = font.render("Hello, World", True, (0, 128, 0))
 
 pwm.set_pwm(1, 0, y_current)
 pwm.set_pwm(0, 0, x_current)
 
 print('Moving servo on channel 0, press Ctrl-C to quit...')
 
+last = time.time()
+dis = get_distance()
+
 try:
     while True:
+        #handle keyboard event
         for event in  pygame.event.get():
             #print event
             if (event.type == KEYDOWN):
@@ -137,7 +115,16 @@ try:
                 if (event.key == K_RIGHT):
                     x_current = servo_move(0, 1, x_current, step, servo_min, servo_max)
 
-                dis = get_distance()
-                print dis
+        #update distance value
+        if (time.time() - last > 0.2):
+            dis = get_distance()
+            last = time.time()
+        text = font.render("{:.2f}cm".format(dis), True, (0, 128, 0))
+        screen.fill((255, 255, 255))
+        screen.blit(text,(320 - text.get_width() // 2, 240 - text.get_height() // 2))
+
+        pygame.display.flip()
+        clock.tick(60)
+
 except KeyboardInterrupt:
     GPIO.cleanup()
